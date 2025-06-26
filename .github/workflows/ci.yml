@@ -16,20 +16,26 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential gcc make
+        sudo apt-get install -y build-essential
+    
+    - name: Setup environment
+      run: |
+        echo "/usr/bin" >> $GITHUB_PATH
+        export PATH="/usr/bin:$PATH"
     
     - name: Verify build tools
       run: |
-        which gcc
-        which make
-        gcc --version
-        make --version
+        echo "PATH: $PATH"
+        which gcc || echo "gcc not found"
+        which make || echo "make not found"
+        /usr/bin/gcc --version || echo "gcc version failed"
+        /usr/bin/make --version || echo "make version failed"
     
     - name: Compile the project
-      run: make
+      run: /usr/bin/make
     
     - name: Run the program
-      run: make run
+      run: /usr/bin/make run
     
     - name: Check for memory leaks (optional)
       run: |
@@ -95,7 +101,9 @@ jobs:
     
     - name: Install dependencies
       run: |
-        brew install gcc make
+        # macOS comes with make by default, but let's make sure
+        command -v make || brew install make
+        command -v gcc || brew install gcc
     
     - name: Compile the project (macOS)
       run: make
