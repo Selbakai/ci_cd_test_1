@@ -2,9 +2,9 @@ name: CI/CD Pipeline with Docker
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature-digital ]
   pull_request:
-    branches: [ main ]
+    branches: [ feature-digital ]
 
 jobs:
   build:
