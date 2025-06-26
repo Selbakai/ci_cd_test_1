@@ -9,33 +9,63 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: ubuntu:latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install dependencies
+    - name: Install build tools
       run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential
+        apt-get update
+        apt-get install -y build-essential gcc make
+        # Verify installation completed
+        dpkg -l | grep build-essential
     
-    - name: Setup environment
+    - name: Debug environment
       run: |
-        echo "/usr/bin" >> $GITHUB_PATH
-        export PATH="/usr/bin:$PATH"
-    
-    - name: Verify build tools
-      run: |
+        echo "Current user: $(whoami)"
         echo "PATH: $PATH"
-        which gcc || echo "gcc not found"
-        which make || echo "make not found"
-        /usr/bin/gcc --version || echo "gcc version failed"
-        /usr/bin/make --version || echo "make version failed"
+        echo "Contents of /usr/bin (make related):"
+        ls -la /usr/bin/ | grep make || echo "No make found in /usr/bin"
+        echo "Searching for make executable:"
+        find /usr -name "make" 2>/dev/null || echo "make not found"
+        
+    - name: Manual make setup (fallback)
+      run: |
+        # Try alternative installation methods
+        if ! command -v make >/dev/null 2>&1; then
+          echo "make not found, trying alternative installation"
+          apt-get install -y make
+          # If still not found, try installing from source
+          if ! command -v make >/dev/null 2>&1; then
+            echo "Installing make manually"
+            apt-get install -y wget
+            cd /tmp
+            wget http://ftp.gnu.org/gnu/make/make-4.3.tar.gz
+            tar -xzf make-4.3.tar.gz
+            cd make-4.3
+            ./configure --prefix=/usr/local
+            make && make install
+            ln -sf /usr/local/bin/make /usr/bin/make
+          fi
+        fi
+    
+    - name: Verify tools are working
+      run: |
+        command -v gcc && gcc --version
+        command -v make && make --version
     
     - name: Compile the project
-      run: /usr/bin/make
+      run: |
+        # Use command -v to get the actual path
+        MAKE_PATH=$(command -v make)
+        echo "Using make at: $MAKE_PATH"
+        $MAKE_PATH
     
-    - name: Run the program
-      run: /usr/bin/make run
+    - name: Run the program  
+      run: |
+        MAKE_PATH=$(command -v make)
+        $MAKE_PATH run
     
     - name: Check for memory leaks (optional)
       run: |
