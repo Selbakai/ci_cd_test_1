@@ -74,8 +74,12 @@ jobs:
     
     - name: Compile the project (Windows)
       shell: msys2 {0}
-      run: make
-    
+      run: |
+        echo "Using MSYS2 to run make"
+        pacman -Syu --noconfirm
+        pacman -S --noconfirm make mingw-w64-x86_64-gcc
+        make
+      
     - name: Run the program (Windows)
       shell: msys2 {0}
       run: make run
