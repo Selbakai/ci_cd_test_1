@@ -1,0 +1,51 @@
+# Multi-stage Dockerfile for optimized builds
+# Build stage
+FROM alpine:latest AS builder
+
+# Install build dependencies
+RUN apk update && apk add --no-cache \
+    gcc \
+    musl-dev \
+    make
+
+# Set working directory
+WORKDIR /build
+
+# Copy source files
+COPY main.c main.h Makefile ./
+
+# Build the application with release optimizations
+RUN make release
+
+# Runtime stage
+FROM alpine:latest AS runtime
+
+# Install only runtime dependencies
+RUN apk update && apk add --no-cache \
+    musl
+
+# Create a non-root user
+RUN addgroup -g 1000 appgroup && \
+    adduser -D -s /bin/sh -u 1000 -G appgroup appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy only the compiled binary from builder stage
+COPY --from=builder /build/main /app/main
+
+# Change ownership
+RUN chown appuser:appgroup /app/main
+
+# Switch to non-root user
+USER appuser
+
+# Expose any ports if needed (none for this simple app)
+# EXPOSE 8080
+
+# Health check (optional)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD /app/main > /dev/null || exit 1
+
+# Set the default command
+CMD ["./main"]

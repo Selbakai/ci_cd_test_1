@@ -1,0 +1,31 @@
+# Git files
+.git
+.gitignore
+
+# Build artifacts
+*.o
+*.exe
+main
+!main.c
+
+# Documentation
+README.md
+
+# IDE files
+.vscode/
+*.swp
+*.swo
+
+# CI/CD files
+.github/
+
+# Test files
+test_auth.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (we don't need them inside the container)
+Dockerfile*
+docker-compose*

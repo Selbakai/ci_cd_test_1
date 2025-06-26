@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ci-cd-test:latest
+    container_name: ci-cd-test-app
+    restart: unless-stopped
+    # If your app had a web interface, you'd expose ports like:
+    # ports:
+    #   - "8080:8080"
+    
+    # Environment variables (if needed)
+    environment:
+      - APP_ENV=production
+    
+    # Volume mounts (if needed for persistent data)
+    # volumes:
+    #   - ./data:/app/data
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Development version with mounted source code
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ci-cd-test:dev
+    container_name: ci-cd-test-dev
+    restart: "no"
+    environment:
+      - APP_ENV=development
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: sh -c "make clean && make debug && ./main"
+    profiles:
+      - dev
