@@ -9,63 +9,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ubuntu:latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install build tools
+    - name: Install dependencies
       run: |
-        apt-get update
-        apt-get install -y build-essential gcc make
-        # Verify installation completed
-        dpkg -l | grep build-essential
-    
-    - name: Debug environment
-      run: |
-        echo "Current user: $(whoami)"
-        echo "PATH: $PATH"
-        echo "Contents of /usr/bin (make related):"
-        ls -la /usr/bin/ | grep make || echo "No make found in /usr/bin"
-        echo "Searching for make executable:"
-        find /usr -name "make" 2>/dev/null || echo "make not found"
-        
-    - name: Manual make setup (fallback)
-      run: |
-        # Try alternative installation methods
-        if ! command -v make >/dev/null 2>&1; then
-          echo "make not found, trying alternative installation"
-          apt-get install -y make
-          # If still not found, try installing from source
-          if ! command -v make >/dev/null 2>&1; then
-            echo "Installing make manually"
-            apt-get install -y wget
-            cd /tmp
-            wget http://ftp.gnu.org/gnu/make/make-4.3.tar.gz
-            tar -xzf make-4.3.tar.gz
-            cd make-4.3
-            ./configure --prefix=/usr/local
-            make && make install
-            ln -sf /usr/local/bin/make /usr/bin/make
-          fi
-        fi
-    
-    - name: Verify tools are working
-      run: |
-        command -v gcc && gcc --version
-        command -v make && make --version
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
     
     - name: Compile the project
-      run: |
-        # Use command -v to get the actual path
-        MAKE_PATH=$(command -v make)
-        echo "Using make at: $MAKE_PATH"
-        $MAKE_PATH
+      run: make
     
-    - name: Run the program  
-      run: |
-        MAKE_PATH=$(command -v make)
-        $MAKE_PATH run
+    - name: Run the program
+      run: make run
     
     - name: Check for memory leaks (optional)
       run: |
@@ -74,7 +31,7 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, build-macos]
     
     steps:
     - uses: actions/checkout@v4
@@ -131,9 +88,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        # macOS comes with make by default, but let's make sure
-        command -v make || brew install make
-        command -v gcc || brew install gcc
+        brew install gcc make
     
     - name: Compile the project (macOS)
       run: make
